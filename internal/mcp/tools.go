@@ -52,7 +52,9 @@ func registerTools(s *server.MCPServer, tg telegram.Client) {
 
 			replyTo := 0
 			if rt := req.GetString("reply_to", ""); rt != "" {
-				replyTo = req.GetInt("reply_to", 0)
+				if v, err := parseInt64(rt); err == nil {
+					replyTo = int(v)
+				}
 			}
 
 			files := getStringArray(req, "files")
