@@ -81,9 +81,7 @@ type BotClient struct {
 	allowedUserIDs map[int64]bool
 	botUserID      int64
 
-	// OnPollMessage is called after a message is received from polling,
-	// before it is dispatched to onMsg. Used by relay watcher for dedup.
-	OnPollMessage func(Message)
+	onPollMessage func(Message)
 }
 
 // NewBotClient creates a new Telegram client.
@@ -114,26 +112,38 @@ func (c *BotClient) BotUserID() int64 {
 	return c.botUserID
 }
 
+// SetOnPollMessage registers a callback for dedup when a message is received from polling.
+func (c *BotClient) SetOnPollMessage(fn func(Message)) {
+	c.onPollMessage = fn
+}
+
 // FetchBotUserID calls getMe to learn this bot's numeric user ID.
-func (c *BotClient) FetchBotUserID() {
+func (c *BotClient) FetchBotUserID() error {
 	url := fmt.Sprintf("%s/getMe", c.baseURL)
 	resp, err := c.http.Get(url)
 	if err != nil {
-		log.Printf("[telegram] getMe failed: %v", err)
-		return
+		return fmt.Errorf("getMe: %w", err)
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read getMe response: %w", err)
+	}
 	var result struct {
 		OK     bool `json:"ok"`
 		Result struct {
 			ID int64 `json:"id"`
 		} `json:"result"`
 	}
-	if err := json.Unmarshal(body, &result); err == nil && result.OK {
-		c.botUserID = result.Result.ID
-		log.Printf("[telegram] bot user ID: %d", c.botUserID)
+	if err := json.Unmarshal(body, &result); err != nil {
+		return fmt.Errorf("unmarshal getMe: %w", err)
 	}
+	if !result.OK {
+		return fmt.Errorf("getMe returned ok=false: %s", body)
+	}
+	c.botUserID = result.Result.ID
+	log.Printf("[telegram] bot user ID: %d", c.botUserID)
+	return nil
 }
 
 // StartPolling blocks and polls Telegram for updates until ctx is cancelled.
@@ -212,8 +222,8 @@ func (c *BotClient) StartPolling(ctx context.Context) {
 			c.mu.Unlock()
 
 			// Notify relay watcher for dedup.
-			if c.OnPollMessage != nil {
-				c.OnPollMessage(msg)
+			if c.onPollMessage != nil {
+				c.onPollMessage(msg)
 			}
 
 			if c.onMsg != nil {

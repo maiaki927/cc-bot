@@ -41,7 +41,7 @@ func main() {
 	mcpserver.SetupNotifications(s, tg)
 
 	// Poller marks messages as seen so the relay watcher skips them.
-	tg.OnPollMessage = watcher.MarkSeen
+	tg.SetOnPollMessage(watcher.MarkSeen)
 
 	go tg.StartPolling(ctx)
 	go watcher.Start(ctx)

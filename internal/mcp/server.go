@@ -24,7 +24,7 @@ const _instructions = "The sender reads Telegram, not this session. Anything you
 	"Telegram's Bot API exposes no history or search — you only see messages as they arrive. If you need earlier context, ask the user to paste it or summarize."
 
 // NewServer creates and configures a new MCP server with all tools registered.
-func NewServer(tg *telegram.BotClient) *server.MCPServer {
+func NewServer(tg telegram.Client) *server.MCPServer {
 	hooks := &server.Hooks{}
 	hooks.AddAfterInitialize(func(_ context.Context, _ any, _ *mcplib.InitializeRequest, result *mcplib.InitializeResult) {
 		result.Capabilities.Experimental = map[string]any{
@@ -45,7 +45,7 @@ func NewServer(tg *telegram.BotClient) *server.MCPServer {
 }
 
 // SetupNotifications wires incoming Telegram messages to MCP channel notifications.
-func SetupNotifications(s *server.MCPServer, tg *telegram.BotClient) {
+func SetupNotifications(s *server.MCPServer, tg telegram.Client) {
 	tg.OnMessage(func(msg telegram.Message) {
 		log.Printf("[telegram] message from %s (chat %d): %s", msg.Username, msg.ChatID, truncate(msg.Text, 60))
 		meta := map[string]any{

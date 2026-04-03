@@ -12,7 +12,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func registerTools(s *server.MCPServer, tg *telegram.BotClient) {
+func registerTools(s *server.MCPServer, tg telegram.Client) {
 	s.AddTool(
 		mcplib.NewTool("get_messages",
 			mcplib.WithDescription("Get new Telegram messages since last check. Returns JSON array of messages."),

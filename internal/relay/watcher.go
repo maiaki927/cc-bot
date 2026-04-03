@@ -71,7 +71,7 @@ func (w *Watcher) Start(ctx context.Context) {
 			}
 			lastModTime = info.ModTime()
 
-			msgs := ReadFile(w.relayFile)
+			msgs := readFile(w.relayFile)
 			for _, msg := range msgs {
 				if !w.shouldPush(msg) {
 					continue
@@ -106,7 +106,7 @@ func (w *Watcher) shouldPush(msg telegram.Message) bool {
 }
 
 func (w *Watcher) initSeenFromRelay() {
-	msgs := ReadFile(w.relayFile)
+	msgs := readFile(w.relayFile)
 	w.seenMu.Lock()
 	defer w.seenMu.Unlock()
 	for _, msg := range msgs {
@@ -129,8 +129,7 @@ func (w *Watcher) cleanupSeenIDs() {
 	}
 }
 
-// ReadFile reads messages from a relay JSON file.
-func ReadFile(path string) []telegram.Message {
+func readFile(path string) []telegram.Message {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
