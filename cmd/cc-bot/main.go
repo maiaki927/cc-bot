@@ -29,7 +29,9 @@ func main() {
 
 	// Set up relay watcher with dedup — relay pushes messages into the
 	// message buffer. MCP notifications are wired after.
-	tg.FetchBotUserID()
+	if err := tg.FetchBotUserID(); err != nil {
+		log.Fatalf("fetch bot user ID: %v", err)
+	}
 	watcher := relay.NewWatcher(cfg.RelayFile, tg.BotUserID, func(msg telegram.Message) {
 		tg.DispatchMessage(msg)
 	})
