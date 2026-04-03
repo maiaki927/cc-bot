@@ -8,8 +8,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && apt-get purge -y --auto-remove build-essential
 
-COPY userbot.py .
+COPY config.py converter.py relay.py main.py ./
 
-CMD ["python", "-u", "userbot.py"]
+CMD ["python", "-u", "main.py"]
