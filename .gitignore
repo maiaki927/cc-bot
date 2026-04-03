@@ -1,0 +1,10 @@
+.env
+bin/
+cc-bot
+*.tar.gz
+*.png
+inter-session-chat.txt
+*.session
+.venv/
+__pycache__/
+*.pyc

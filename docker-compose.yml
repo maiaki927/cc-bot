@@ -1,0 +1,74 @@
+services:
+  userbot:
+    build:
+      context: ./userbot
+      dockerfile: Dockerfile
+    restart: always
+    user: "65532:65532"
+    environment:
+      API_ID: ${TELEGRAM_API_ID}
+      API_HASH: ${TELEGRAM_API_HASH}
+      SESSION_STRING: ${TELEGRAM_SESSION_STRING}
+      RELAY_FILE: /data/cc-bot-relay.json
+      WATCHED_CHATS: ${WATCHED_CHATS:-}
+      MAX_MESSAGES: "50"
+      MAX_AGE_SECONDS: "3600"
+    volumes:
+      - relay-data:/data
+
+  cc-bot-1:
+    build: .
+    image: ${CC_BOT_IMAGE:-cc-bot:latest}
+    restart: always
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN_1}
+      MCP_TRANSPORT: http
+      PORT: "8080"
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      RELAY_FILE: /data/cc-bot-relay.json
+      BOT_NAME: ${BOT_NAME_1:-一號}
+    ports:
+      - "8081:8080"
+    volumes:
+      - relay-data:/data
+    depends_on:
+      - userbot
+
+  cc-bot-2:
+    build: .
+    image: ${CC_BOT_IMAGE:-cc-bot:latest}
+    restart: always
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN_2}
+      MCP_TRANSPORT: http
+      PORT: "8080"
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      RELAY_FILE: /data/cc-bot-relay.json
+      BOT_NAME: ${BOT_NAME_2:-二號}
+    ports:
+      - "8082:8080"
+    volumes:
+      - relay-data:/data
+    depends_on:
+      - userbot
+
+  cc-bot-3:
+    build: .
+    image: ${CC_BOT_IMAGE:-cc-bot:latest}
+    restart: always
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN_3}
+      MCP_TRANSPORT: http
+      PORT: "8080"
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      RELAY_FILE: /data/cc-bot-relay.json
+      BOT_NAME: ${BOT_NAME_3:-三號}
+    ports:
+      - "8083:8080"
+    volumes:
+      - relay-data:/data
+    depends_on:
+      - userbot
+
+volumes:
+  relay-data:
