@@ -42,9 +42,9 @@ def message_to_dict(message: PyroMessage) -> dict:
 
     if message.photo:
         result["attachment_file_id"] = message.photo.file_id
-    if message.document:
+    elif message.document:
         result["attachment_file_id"] = message.document.file_id
-    if message.sticker:
-        result["text"] = text or f"[sticker: {message.sticker.emoji or '?'}]"
+    if message.sticker and not text:
+        result["text"] = f"[sticker: {message.sticker.emoji or '?'}]"
 
     return result

@@ -17,6 +17,17 @@ class Config:
     max_messages: int = 50
     max_age_seconds: int = 3600
 
+    def __repr__(self) -> str:
+        return (
+            f"Config(api_id={self.api_id}, "
+            f"api_hash='***', "
+            f"session_string='***', "
+            f"relay_file={self.relay_file!r}, "
+            f"watched_chats={self.watched_chats}, "
+            f"max_messages={self.max_messages}, "
+            f"max_age_seconds={self.max_age_seconds})"
+        )
+
 
 def load() -> Config:
     """從環境變數載入設定，缺少必填欄位時拋出 ValueError。"""
@@ -28,18 +39,30 @@ def load() -> Config:
     if not api_hash:
         raise ValueError("API_HASH is required")
 
+    try:
+        api_id = int(raw_api_id)
+    except ValueError:
+        raise ValueError(f"API_ID must be an integer, got: {raw_api_id!r}")
+
     watched = set()
     raw = os.environ.get("WATCHED_CHATS", "").strip()
     if raw:
         for cid in raw.split(","):
             cid = cid.strip()
             if cid:
-                watched.add(int(cid))
+                try:
+                    watched.add(int(cid))
+                except ValueError:
+                    logger.warning("invalid chat ID in WATCHED_CHATS: %r", cid)
+
+    session_string = os.environ.get("SESSION_STRING", "")
+    if not session_string:
+        logger.warning("SESSION_STRING is empty — will use file-based session")
 
     cfg = Config(
-        api_id=int(raw_api_id),
+        api_id=api_id,
         api_hash=api_hash,
-        session_string=os.environ.get("SESSION_STRING", ""),
+        session_string=session_string,
         relay_file=os.environ.get("RELAY_FILE", "/data/cc-bot-relay.json"),
         watched_chats=watched,
         max_messages=int(os.environ.get("MAX_MESSAGES", "50")),

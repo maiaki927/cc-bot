@@ -6,11 +6,12 @@
 
 import logging
 import os
+import threading
 
 from pyrogram import Client
 from pyrogram.types import Message as PyroMessage
 
-from config import load
+from config import Config, load
 from converter import message_to_dict, should_capture
 from relay import append_message
 
@@ -20,32 +21,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger("userbot")
 
-cfg = load()
 
-if cfg.session_string:
-    app = Client(
-        "userbot",
-        api_id=cfg.api_id,
-        api_hash=cfg.api_hash,
-        session_string=cfg.session_string,
-    )
-else:
-    app = Client(
-        "userbot",
-        api_id=cfg.api_id,
-        api_hash=cfg.api_hash,
-        workdir=os.environ.get("SESSION_DIR", "/data/sessions"),
-    )
+def create_app(cfg: Config) -> Client:
+    if cfg.session_string:
+        app = Client(
+            "userbot",
+            api_id=cfg.api_id,
+            api_hash=cfg.api_hash,
+            session_string=cfg.session_string,
+        )
+    else:
+        app = Client(
+            "userbot",
+            api_id=cfg.api_id,
+            api_hash=cfg.api_hash,
+            workdir=os.environ.get("SESSION_DIR", "/data/sessions"),
+        )
+
+    # Lock to prevent race condition on relay file read-modify-write.
+    relay_lock = threading.Lock()
+
+    @app.on_message()
+    async def handler(_client: Client, message: PyroMessage) -> None:
+        if not should_capture(message, cfg.watched_chats):
+            return
+        msg_dict = message_to_dict(message)
+        with relay_lock:
+            append_message(cfg.relay_file, msg_dict, cfg.max_messages, cfg.max_age_seconds)
+
+    return app
 
 
-@app.on_message()
-async def handler(_client: Client, message: PyroMessage) -> None:
-    if not should_capture(message, cfg.watched_chats):
-        return
-    msg_dict = message_to_dict(message)
-    append_message(cfg.relay_file, msg_dict, cfg.max_messages, cfg.max_age_seconds)
+def main() -> None:
+    cfg = load()
+    app = create_app(cfg)
+    logger.info("Userbot relay 啟動中...")
+    app.run()
 
 
 if __name__ == "__main__":
-    logger.info("Userbot relay 啟動中...")
-    app.run()
+    main()
