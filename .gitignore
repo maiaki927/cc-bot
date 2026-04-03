@@ -1,6 +1,6 @@
 .env
 bin/
-cc-bot
+/cc-bot
 *.tar.gz
 *.png
 inter-session-chat.txt
