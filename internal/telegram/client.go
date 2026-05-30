@@ -81,8 +81,6 @@ type BotClient struct {
 	allowedUserIDs map[int64]bool
 	botUserID      int64
 
-	onPollMessage func(Message)
-
 	// cache for getChatMember results: key = chatID, value = expiry time
 	memberCacheMu sync.Mutex
 	memberCache   map[int64]memberCacheEntry
@@ -122,10 +120,6 @@ func (c *BotClient) BotUserID() int64 {
 	return c.botUserID
 }
 
-// SetOnPollMessage registers a callback for dedup when a message is received from polling.
-func (c *BotClient) SetOnPollMessage(fn func(Message)) {
-	c.onPollMessage = fn
-}
 
 // FetchBotUserID calls getMe to learn this bot's numeric user ID.
 func (c *BotClient) FetchBotUserID() error {
@@ -241,11 +235,6 @@ func (c *BotClient) StartPolling(ctx context.Context) {
 			c.mu.Lock()
 			c.messages = append(c.messages, msg)
 			c.mu.Unlock()
-
-			// Notify relay watcher for dedup.
-			if c.onPollMessage != nil {
-				c.onPollMessage(msg)
-			}
 
 			if c.onMsg != nil {
 				c.onMsg(msg)

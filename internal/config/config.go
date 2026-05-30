@@ -16,7 +16,6 @@ type Config struct {
 	Transport      string // "http" or "stdio"
 	Port           string
 	AuthToken      string
-	RelayFile      string
 	AllowedUserIDs []int64
 }
 
@@ -32,11 +31,6 @@ func Load() (*Config, error) {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
-	}
-
-	relayFile := os.Getenv("RELAY_FILE")
-	if relayFile == "" {
-		relayFile = "/tmp/cc-bot-relay.json"
 	}
 
 	var allowedIDs []int64
@@ -60,7 +54,6 @@ func Load() (*Config, error) {
 		Transport:      strings.ToLower(os.Getenv("MCP_TRANSPORT")),
 		Port:           port,
 		AuthToken:      os.Getenv("MCP_AUTH_TOKEN"),
-		RelayFile:      relayFile,
 		AllowedUserIDs: allowedIDs,
 	}, nil
 }

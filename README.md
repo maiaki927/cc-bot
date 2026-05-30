@@ -5,11 +5,9 @@ Three Claude-powered Telegram bots (小一/小二/小三) connected via MCP.
 ## Architecture
 
 ```
-Telegram ──→ userbot (MTProto) ──→ relay file ──→ cc-bot-1/2/3 (MCP HTTP)
-         ──→ Bot API polling   ──→ cc-bot-1/2/3
+Telegram ──→ Bot API polling ──→ cc-bot-1/2/3 (MCP HTTP)
 ```
 
-- **userbot**: Python MTProto client that monitors group chats and writes messages to a shared relay file
 - **cc-bot-1/2/3**: Go MCP servers, one per bot token, that expose Telegram tools to Claude
 
 ## Configuration
@@ -20,9 +18,6 @@ Copy `.env.example` to `.env` and fill in:
 |---|---|
 | `TELEGRAM_BOT_TOKEN_1/2/3` | Bot tokens from @BotFather |
 | `MCP_AUTH_TOKEN` | Shared secret for MCP HTTP auth |
-| `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | From my.telegram.org (for userbot) |
-| `TELEGRAM_SESSION_STRING` | MTProto session (generate once with userbot) |
-| `WATCHED_CHATS` | Comma-separated group chat IDs for userbot relay (empty = all) |
 | `ALLOWED_USER_IDS` | Comma-separated user IDs for message filtering (see below) |
 
 ### Message Filtering (`ALLOWED_USER_IDS`)
@@ -61,10 +56,7 @@ docker buildx create --use --name multiplatform --platform linux/amd64,linux/arm
 # 1. Build for linux/amd64 (required for GCP)
 docker buildx build --platform linux/amd64 -t cc-bot:latest --load .
 
-# 2. Build userbot image (if changed)
-docker buildx build --platform linux/amd64 -t cc-bot-userbot:latest --load ./userbot
-
-# 3. Save and upload
+# 2. Save and upload
 docker save cc-bot:latest | gzip > /tmp/cc-bot.tar.gz
 scp -i ~/.ssh/gcpmai /tmp/cc-bot.tar.gz gcpmai@<GCP_IP>:/tmp/
 
